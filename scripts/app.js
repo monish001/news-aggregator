@@ -180,7 +180,7 @@ APP.Main = (function() {
     function animate () {
 
       // Find out where it currently is.
-      var storyDetailsPosition = storyDetails.getBoundingClientRect();
+      var storyDetailsPosition = storyDetails.getBoundingClientRect(); // layout
 
       // Set the left value if we don't have one already.
       if (left === null)
@@ -197,14 +197,14 @@ APP.Main = (function() {
 
       // And update the styles. Wait, is this a read-write cycle?
       // I hope I don't trigger a forced synchronous layout!
-      storyDetails.style.left = left + 'px';
+      storyDetails.style.left = left + 'px'; // style
     }
 
     // We want slick, right, so let's do a setTimeout
     // every few milliseconds. That's going to keep
     // it all tight. Or maybe we're doing visual changes
     // and they should be in a requestAnimationFrame
-    setTimeout(animate, 4);
+    setTimeout(animate, 4); // todo @monish move to requestAnimationFrame
   }
 
   function hideStory(id) {
@@ -255,30 +255,43 @@ APP.Main = (function() {
   function colorizeAndScaleStories() {
 
     var storyElements = document.querySelectorAll('.story');
+    var nStories = storyElements.length;
 
-    // It does seem awfully broad to change all the
-    // colors every time!
-    for (var s = 0; s < storyElements.length; s++) {
+    var mainHeight = main.offsetHeight;
+    var mainPosition = main.getBoundingClientRect();
+    var bodyTop = document.body.getBoundingClientRect().top;
+    var storyScale = [], storyOpacity = [], storySaturation = [];
 
+    // Layout calculations
+    for(var s=0; s<nStories; s++){
       var story = storyElements[s];
       var score = story.querySelector('.story__score');
-      var title = story.querySelector('.story__title');
 
-      // Base the scale on the y position of the score.
-      var height = main.offsetHeight;
-      var mainPosition = main.getBoundingClientRect();
       var scoreLocation = score.getBoundingClientRect().top -
-          document.body.getBoundingClientRect().top;
-      var scale = Math.min(1, 1 - (0.05 * ((scoreLocation - 170) / height)));
-      var opacity = Math.min(1, 1 - (0.5 * ((scoreLocation - 170) / height)));
+          bodyTop
+      var scale = Math.min(1, 1 - (0.05 * ((scoreLocation - 170) / mainHeight)));
+      storyScale.push(scale);
+      var opacity = Math.min(1, 1 - (0.5 * ((scoreLocation - 170) / mainHeight)));
+      storyOpacity.push(opacity);
+
+      // Now figure out how wide it is and use that to saturate it.
+      scoreLocation2 = score.getBoundingClientRect(); // layout
+      var saturation = (100 * ((scoreLocation2.width - 38) / 2));
+      storySaturation.push(saturation);
+    }
+
+    // Style calculations
+    for(var s=0; s<nStories; s++){
+      var story = storyElements[s],
+        score = story.querySelector('.story__score'),
+        title = story.querySelector('.story__title'),
+        scale = storyScale[s],
+        opacity = storyOpacity[s],
+        saturation = storySaturation[s];
 
       score.style.width = (scale * 40) + 'px';
       score.style.height = (scale * 40) + 'px';
       score.style.lineHeight = (scale * 40) + 'px';
-
-      // Now figure out how wide it is and use that to saturate it.
-      scoreLocation = score.getBoundingClientRect();
-      var saturation = (100 * ((scoreLocation.width - 38) / 2));
 
       score.style.backgroundColor = 'hsl(42, ' + saturation + '%, 50%)';
       title.style.opacity = opacity;
