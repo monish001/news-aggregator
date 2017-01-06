@@ -62,31 +62,25 @@ APP.Main = (function() {
    * probably in a requestAnimationFrame callback.
    */
   function onStoryData (key, details) {
-
-    // This seems odd. Surely we could just select the story
-    // directly rather than looping through all of them.
-    var storyElements = document.querySelectorAll('.story');
-
-    for (var i = 0; i < storyElements.length; i++) {
-
-      if (storyElements[i].getAttribute('id') === 's-' + key) {
-
-        details.time *= 1000;
-        var story = storyElements[i];
-        var html = storyTemplate(details);
-        story.innerHTML = html;
-        story.addEventListener('click', onStoryClick.bind(this, details));
-        story.classList.add('clickable');
-
-        // Tick down. When zero we can batch in the next load.
-        storyLoadCount--;
-
-      }
+    var elStory = document.getElementById('s-' + key);
+    if(!elStory){
+      return;
     }
 
+    details.time *= 1000;
+    var story = elStory;
+    var html = storyTemplate(details);
+    story.innerHTML = html;
+    story.addEventListener('click', onStoryClick.bind(this, details));
+    story.classList.add('clickable');
+
+    // Tick down. When zero we can batch in the next load.
+    storyLoadCount--;
+
     // Colorize on complete.
-    if (storyLoadCount === 0)
+    if (storyLoadCount === 0){
       colorizeAndScaleStories();
+    }
   }
 
   function onStoryClick(details) {
@@ -134,8 +128,9 @@ APP.Main = (function() {
       var headerHeight = storyHeader.getBoundingClientRect().height;
       storyContent.style.paddingTop = headerHeight + 'px';
 
-      if (typeof kids === 'undefined')
+      if (typeof kids === 'undefined'){
         return;
+      }
 
       for (var k = 0; k < kids.length; k++) {
 
@@ -191,7 +186,7 @@ APP.Main = (function() {
 
       // Set up the next bit of the animation if there is more to do.
       if (Math.abs(left) > 0.5)
-        setTimeout(animate, 4);
+        requestAnimationFrame(animate);
       else
         left = 0;
 
@@ -204,7 +199,7 @@ APP.Main = (function() {
     // every few milliseconds. That's going to keep
     // it all tight. Or maybe we're doing visual changes
     // and they should be in a requestAnimationFrame
-    setTimeout(animate, 4); // todo @monish move to requestAnimationFrame
+    requestAnimationFrame(animate); // todo @monish move to requestAnimationFrame
   }
 
   function hideStory(id) {
@@ -230,7 +225,7 @@ APP.Main = (function() {
 
       // Set up the next bit of the animation if there is more to do.
       if (Math.abs(left - target) > 0.5) {
-        setTimeout(animate, 4);
+        requestAnimationFrame(animate);
       } else {
         left = target;
         inDetails = false;
@@ -245,16 +240,15 @@ APP.Main = (function() {
     // every few milliseconds. That's going to keep
     // it all tight. Or maybe we're doing visual changes
     // and they should be in a requestAnimationFrame
-    setTimeout(animate, 4);
+    requestAnimationFrame(animate);
   }
 
   /**
-   * Does this really add anything? Can we do this kind
-   * of work in a cheaper way?
+   * Fixed repeated FSL
    */
   function colorizeAndScaleStories() {
 
-    var storyElements = document.querySelectorAll('.story');
+    var storyElements = main.querySelectorAll('.story');
     var nStories = storyElements.length;
 
     var mainHeight = main.offsetHeight;
@@ -308,30 +302,37 @@ APP.Main = (function() {
 
   });
 
-  main.addEventListener('scroll', function() {
-
+  function onScroll() {
     var header = $('header');
     var headerTitles = header.querySelector('.header__title-wrapper');
     var scrollTopCapped = Math.min(70, main.scrollTop);
     var scaleString = 'scale(' + (1 - (scrollTopCapped / 300)) + ')';
 
-    colorizeAndScaleStories();
-
-    header.style.height = (156 - scrollTopCapped) + 'px';
-    headerTitles.style.webkitTransform = scaleString;
-    headerTitles.style.transform = scaleString;
-
-    // Add a shadow to the header.
-    if (main.scrollTop > 70)
-      document.body.classList.add('raised');
-    else
-      document.body.classList.remove('raised');
-
     // Check if we need to load the next batch of stories.
     var loadThreshold = (main.scrollHeight - main.offsetHeight -
         LAZY_LOAD_THRESHOLD);
-    if (main.scrollTop > loadThreshold)
+    if (main.scrollTop > loadThreshold){
       loadStoryBatch();
+    }
+
+    // Add a shadow to the header.
+    if (main.scrollTop > 70){
+      document.body.classList.add('raised');
+    }
+    else{
+      document.body.classList.remove('raised');
+    }
+
+    colorizeAndScaleStories(); // TODO, maybe this could be moved to loadStoryBatch
+
+    // Style calculation moved after Layout.
+    header.style.height = (156 - scrollTopCapped) + 'px';
+    headerTitles.style.webkitTransform = scaleString;
+    headerTitles.style.transform = scaleString;
+  }
+
+  main.addEventListener('scroll', function() {
+    requestAnimationFrame(onScroll); // Fix. onScroll callback execution moved to start of next frame.
   });
 
   function loadStoryBatch() {
@@ -348,17 +349,21 @@ APP.Main = (function() {
         return;
 
       var key = String(stories[i]);
-      var story = document.createElement('div');
-      story.setAttribute('id', 's-' + key);
-      story.classList.add('story');
-      story.innerHTML = storyTemplate({
+      var elStory = document.createElement('div');
+      elStory.setAttribute('id', 's-' + key);
+      elStory.classList.add('story');
+      elStory.innerHTML = storyTemplate({
         title: '...',
         score: '-',
         by: '...',
         time: 0
       });
-      main.appendChild(story);
+      main.appendChild(elStory);
 
+  //     requestAnimationFrame(getStoryById);
+  // function getStoryById(argument) {
+  //   APP.Data.getStoryById(stories[i], onStoryData.bind(this, key));
+  // }
       APP.Data.getStoryById(stories[i], onStoryData.bind(this, key));
     }
 
