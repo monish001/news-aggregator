@@ -79,7 +79,7 @@ APP.Main = (function() {
 
     // Colorize on complete.
     if (storyLoadCount === 0){
-      colorizeAndScaleStories();
+      //colorizeAndScaleStories();
     }
   }
 
@@ -199,7 +199,7 @@ APP.Main = (function() {
     // every few milliseconds. That's going to keep
     // it all tight. Or maybe we're doing visual changes
     // and they should be in a requestAnimationFrame
-    requestAnimationFrame(animate); // todo @monish move to requestAnimationFrame
+    requestAnimationFrame(animate);
   }
 
   function hideStory(id) {
@@ -323,7 +323,7 @@ APP.Main = (function() {
       document.body.classList.remove('raised');
     }
 
-    colorizeAndScaleStories(); // TODO, maybe this could be moved to loadStoryBatch
+    //colorizeAndScaleStories(); // TODO, maybe this could be moved to loadStoryBatch
 
     // Style calculation moved after Layout.
     header.style.height = (156 - scrollTopCapped) + 'px';
