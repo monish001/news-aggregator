@@ -239,6 +239,7 @@ main.loading {
 
   overflow: hidden;
   transition: opacity 0.3s ease-out;
+  will-change: transform;
 }
 
 
